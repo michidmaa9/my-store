@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCartStore, Product } from './store/useCartStore';
-import { supabase } from './lib/supabase';
+import { supabase } from './app/lib/supabase';
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
