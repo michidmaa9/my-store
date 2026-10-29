@@ -6,7 +6,7 @@ import { useCartStore, Product } from './store/useCartStore';
 import { supabase } from './app/lib/supabase';
 
 export default function HomePage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cart, addToCart, removeFromCart } = useCartStore();
@@ -52,48 +52,53 @@ export default function HomePage() {
           <p className="text-gray-500">Ачаалж байна...</p>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="flex flex-col justify-between rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md"
-              >
-                <div>
-                  <div className="mb-4 flex h-48 w-full items-center justify-center overflow-hidden rounded-lg bg-gray-100">
-                    {product.imageUrl ? (
-                      <img
-                        src={product.imageUrl}
-                        alt={product.title}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            'https://placehold.co/600x400?text=No+Image';
-                        }}
-                      />
-                    ) : (
-                      <span className="text-sm text-gray-400">Зураггүй</span>
-                    )}
+            {products.map((product) => {
+              // Supabase-ийн image_url болон imageUrl хоёрын алийг нь ч унших боломжтой болгов
+              const imgSrc = product.image_url || product.imageUrl;
+
+              return (
+                <div
+                  key={product.id}
+                  className="flex flex-col justify-between rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md"
+                >
+                  <div>
+                    <div className="mb-4 flex h-48 w-full items-center justify-center overflow-hidden rounded-lg bg-gray-100">
+                      {imgSrc ? (
+                        <img
+                          src={imgSrc}
+                          alt={product.title}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              'https://placehold.co/600x400?text=No+Image';
+                          }}
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-400">Зураггүй</span>
+                      )}
+                    </div>
+                    <h2 className="text-lg font-bold">{product.title}</h2>
+                    <p className="mt-1 font-semibold text-amber-600">
+                      {Number(product.price).toLocaleString()} ₮
+                    </p>
                   </div>
-                  <h2 className="text-lg font-bold">{product.title}</h2>
-                  <p className="mt-1 font-semibold text-amber-600">
-                    {product.price.toLocaleString()} ₮
-                  </p>
+                  <div className="mt-4 flex gap-2">
+                    <Link
+                      href={`/products/${product.id}`}
+                      className="flex-1 rounded-lg border py-2 text-center text-sm font-medium hover:bg-gray-50"
+                    >
+                      Дэлгэрэнгүй
+                    </Link>
+                    <button
+                      onClick={() => addToCart(product)}
+                      className="flex-1 rounded-lg bg-black py-2 text-sm font-medium text-white hover:bg-gray-800"
+                    >
+                      Сагслах
+                    </button>
+                  </div>
                 </div>
-                <div className="mt-4 flex gap-2">
-                  <Link
-                    href={`/products/${product.id}`}
-                    className="flex-1 rounded-lg border py-2 text-center text-sm font-medium hover:bg-gray-50"
-                  >
-                    Дэлгэрэнгүй
-                  </Link>
-                  <button
-                    onClick={() => addToCart(product)}
-                    className="flex-1 rounded-lg bg-black py-2 text-sm font-medium text-white hover:bg-gray-800"
-                  >
-                    Сагслах
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
@@ -124,7 +129,7 @@ export default function HomePage() {
                     <div>
                       <p className="font-semibold">{item.title}</p>
                       <p className="text-sm text-gray-500">
-                        {item.price.toLocaleString()} ₮ x {item.quantity}
+                        {Number(item.price).toLocaleString()} ₮ x {item.quantity}
                       </p>
                     </div>
                     <button
