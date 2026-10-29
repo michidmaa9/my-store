@@ -3,7 +3,6 @@
 import React, { useState, use } from 'react';
 import { useCartStore } from '../../store/useCartStore';
 import Link from 'next/link';
-export const dynamic = 'force-dynamic';
 
 // Туршилтын дата (Бодит төсөлд Database-ээс авна)
 const productsData = [

@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { useCartStore, Product } from './store/useCartStore';
 import { supabase } from './lib/supabase';
 
-export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
