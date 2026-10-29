@@ -2,30 +2,21 @@
 
 import React, { use, Suspense } from 'react';
 import Link from 'next/link';
-import { useCartStore } from '../../store/useCartStore';
+import { useCartStore, Product } from '../../store/useCartStore';
 
 function ProductContent({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const productId = Number(resolvedParams.id);
   const { addToCart } = useCartStore();
 
-  // Туршилтын дата (Бодит төсөлд Supabase-ээс авна)
-  const productsData = [
-    {
-      id: 1,
-      title: 'Бүтээгдэхүүн 1',
-      price: 50000,
-      description: 'Энэ бол барааны дэлгэрэнгүй тайлбар хэсэг юм.',
-      imageUrl: '',
-    },
-  ];
-
-  const product = productsData.find((p) => p.id === productId) || {
+  // Product type-тай яг таарах объект үүсгэх
+  const product: Product = {
     id: productId,
     title: `Бараа #${productId}`,
     price: 25000,
     description: 'Барааны тайлбар одоогоор оруулаагүй байна.',
     imageUrl: '',
+    isPreorder: false, // TypeScript-ийн шаардлагатай талбарыг оруулав
   };
 
   return (
