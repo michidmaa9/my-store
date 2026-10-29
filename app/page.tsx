@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useCartStore, Product } from './store/useCartStore';
-import { supabase } from './app/lib/supabase';
+import { useCartStore } from './store/useCartStore';
+import { supabase } from './lib/supabase';
 
 export default function HomePage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -53,7 +53,6 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {products.map((product) => {
-              // Supabase-ийн image_url болон imageUrl хоёрын алийг нь ч унших боломжтой болгов
               const imgSrc = product.image_url || product.imageUrl;
 
               return (
