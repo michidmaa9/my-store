@@ -44,7 +44,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Main Container */}
+      {/* Main Content */}
       <main className="mx-auto max-w-7xl px-6 py-10">
         <h1 className="mb-8 text-3xl font-extrabold tracking-tight">Бараанууд</h1>
 
@@ -58,13 +58,21 @@ export default function HomePage() {
                 className="flex flex-col justify-between rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md"
               >
                 <div>
-                  {product.imageUrl && (
-                    <img
-                      src={product.imageUrl}
-                      alt={product.title}
-                      className="mb-4 h-48 w-full rounded-lg object-cover"
-                    />
-                  )}
+                  <div className="mb-4 flex h-48 w-full items-center justify-center overflow-hidden rounded-lg bg-gray-100">
+                    {product.imageUrl ? (
+                      <img
+                        src={product.imageUrl}
+                        alt={product.title}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            'https://placehold.co/600x400?text=No+Image';
+                        }}
+                      />
+                    ) : (
+                      <span className="text-sm text-gray-400">Зураггүй</span>
+                    )}
+                  </div>
                   <h2 className="text-lg font-bold">{product.title}</h2>
                   <p className="mt-1 font-semibold text-amber-600">
                     {product.price.toLocaleString()} ₮
