@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { supabase } from '../lib/supabase';
 
 export default function AdminPage() {
+  const [password, setPassword] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // -------------------------------------------------------------
+  // Энд өөрийн хүссэн админ нууц үгээ тохируулаарай:
+  const ADMIN_PASSWORD = 'admin123';
+  // -------------------------------------------------------------
+
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,21 +23,32 @@ export default function AdminPage() {
   const [isPreorder, setIsPreorder] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Бараануудыг Supabase-ээс татаж авах
+  // Нууц үг шалгах
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      fetchProducts();
+    } else {
+      alert('Нууц үг буруу байна!');
+    }
+  };
+
+  // Бараануудыг Supabase-ээс татах
   const fetchProducts = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('products').select('*').order('id', { ascending: false });
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('id', { ascending: false });
+
     if (!error && data) {
       setProducts(data);
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  // Шинэ бараа нэмэх функц
+  // Шинэ бараа нэмэх
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !price) return alert('Барааны нэр болон үнийг оруулна уу!');
@@ -52,12 +71,12 @@ export default function AdminPage() {
       setPrice('');
       setImageUrl('');
       setIsPreorder(false);
-      fetchProducts(); // Жагсаалтыг шинэчлэх
+      fetchProducts();
     }
     setSubmitting(false);
   };
 
-  // Бараа устгах функц
+  // Бараа устгах
   const handleDeleteProduct = async (id: number) => {
     if (!confirm('Энэ барааг устгахдаа итгэлтэй байна уу?')) return;
 
@@ -70,13 +89,46 @@ export default function AdminPage() {
     }
   };
 
+  // Нууц үгээр нэвтрээгүй үед харагдах цонх
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+        <form
+          onSubmit={handleLogin}
+          className="w-full max-w-sm rounded-2xl border bg-white p-6 shadow-md"
+        >
+          <h2 className="mb-4 text-center text-xl font-bold">Админ Нэвтрэх</h2>
+          <div className="mb-4">
+            <input
+              type="password"
+              placeholder="Нууц үгээ оруулна уу"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg border p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full rounded-lg bg-black py-2.5 font-medium text-white hover:bg-gray-800"
+          >
+            Нэвтрэх
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  // Нэвтэрсний дараа харагдах Үндсэн Админ Самбар
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-6 md:p-12">
+    <div className="min-h-screen bg-gray-50 p-6 text-gray-900 md:p-12">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold">Админ Самбар</h1>
-          <Link href="/" className="rounded-lg border bg-white px-4 py-2 text-sm font-medium hover:bg-gray-100">
-            ← Дэлгэрэнгүй Дэлгүүр рүү буцах
+          <Link
+            href="/"
+            className="rounded-lg border bg-white px-4 py-2 text-sm font-medium hover:bg-gray-100"
+          >
+            ← Дэлгүүр рүү буцах
           </Link>
         </div>
 
@@ -86,113 +138,12 @@ export default function AdminPage() {
             <h2 className="mb-4 text-xl font-bold">Шинэ бараа нэмэх</h2>
             <form onSubmit={handleAddProduct} className="flex flex-col gap-4">
               <div>
-                <label className="mb-1 block text-sm font-medium">Барааны нэр *</label>
+                <label className="mb-1 block text-sm font-medium">
+                  Барааны нэр *
+                </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Жишээ: Хууди"
-                  className="w-full rounded-lg border p-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium">Үнэ (₮) *</label>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="50000"
-                  className="w-full rounded-lg border p-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium">Зургийн URL (Image URL)</label>
-                <input
-                  type="text"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full rounded-lg border p-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="preorder"
-                  checked={isPreorder}
-                  onChange={(e) => setIsPreorder(e.target.checked)}
-                  className="h-4 w-4"
-                />
-                <label htmlFor="preorder" className="text-sm">
-                  Урьдчилсан захиалга (Pre-order)
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="mt-2 w-full rounded-lg bg-black py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:bg-gray-400"
-              >
-                {submitting ? 'Нэмж байна...' : 'Бараа оруулах'}
-              </button>
-            </form>
-          </div>
-
-          {/* Барааны жагсаалт ба Устгах хэсэг */}
-          <div className="md:col-span-2 rounded-2xl border bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-xl font-bold">Барааны жагсаалт ({products.length})</h2>
-
-            {loading ? (
-              <p className="text-gray-500">Ачаалж байна...</p>
-            ) : products.length === 0 ? (
-              <p className="text-gray-500">Одоогоор бараа оруулаагүй байна.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {products.map((product) => {
-                  const imgSrc = product.image_url || product.imageUrl;
-
-                  return (
-                    <div
-                      key={product.id}
-                      className="flex items-center justify-between rounded-xl border p-3 hover:bg-gray-50"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                          {imgSrc ? (
-                            <img src={imgSrc} alt={product.title} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
-                              Зураггүй
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-bold">{product.title}</p>
-                          <p className="text-sm text-amber-600 font-semibold">
-                            {Number(product.price).toLocaleString()} ₮
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
-                      >
-                        Устгах
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+                  className="w
