@@ -9,14 +9,13 @@ function ProductContent({ params }: { params: Promise<{ id: string }> }) {
   const productId = Number(resolvedParams.id);
   const { addToCart } = useCartStore();
 
-  // Product type-тай яг таарах объект үүсгэх
+  // Product type-д тааруулж description-ийг хасав
   const product: Product = {
     id: productId,
     title: `Бараа #${productId}`,
     price: 25000,
-    description: 'Барааны тайлбар одоогоор оруулаагүй байна.',
     imageUrl: '',
-    isPreorder: false, // TypeScript-ийн шаардлагатай талбарыг оруулав
+    isPreorder: false,
   };
 
   return (
@@ -40,7 +39,6 @@ function ProductContent({ params }: { params: Promise<{ id: string }> }) {
             <p className="mt-2 text-2xl font-semibold text-amber-600">
               {product.price.toLocaleString()} ₮
             </p>
-            <p className="mt-4 text-gray-600">{product.description}</p>
           </div>
           <button
             onClick={() => addToCart(product)}
