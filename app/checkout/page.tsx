@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '../store/useCartStore';
@@ -13,10 +13,23 @@ function CheckoutContent() {
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  // Нийт төлөх дүн бодох
+  useEffect(() => {
+    async function checkUser() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('Захиал өгөхийн тулд эхлээд нэвтэрнэ үү!');
+        router.push('/login');
+      } else {
+        setUserId(session.user.id);
+      }
+    }
+    checkUser();
+  }, [router]);
+
   const totalPrice = cart.reduce(
     (acc, item) => acc + Number(item.price) * item.quantity,
     0
@@ -45,6 +58,7 @@ function CheckoutContent() {
         total_price: totalPrice,
         items: cart,
         status: 'pending',
+        user_id: userId,
       },
     ]);
 
@@ -61,13 +75,13 @@ function CheckoutContent() {
   if (orderSuccess) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-white p-6 text-center">
-        <div className="w-full max-w-md rounded-none border border-gray-200 p-8 shadow-sm">
+        <div className="w-full max-w-md border border-gray-200 p-8 shadow-sm">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-black text-white text-lg font-bold">
             ✓
           </div>
           <h1 className="text-lg font-bold tracking-widest uppercase">Захиалга амжилттай!</h1>
           <p className="mt-3 text-xs text-gray-500 leading-relaxed tracking-wide">
-            Бид таны захиалгыг хүлээн авлаа. Дээрх данс руу шилжүүлэг хийснээр таны захиалга баталгаажиж хүргэлтэд гарах болно.
+            Бид таны захиалгыг хүлээн авлаа. Банкны данс руу шилжүүлэг хийснээр захиалга баталгаажина.
           </p>
           <Link
             href="/"
@@ -82,7 +96,6 @@ function CheckoutContent() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      {/* Header */}
       <header className="sticky top-0 z-40 border-b border-gray-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <Link href="/" className="text-xs font-bold tracking-widest uppercase text-gray-600 hover:text-black">
@@ -99,9 +112,7 @@ function CheckoutContent() {
         <h1 className="mb-10 text-xl font-light tracking-widest uppercase text-center">Захиалга баталгаажуулах</h1>
 
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
-          {/* Зүүн тал: Хүргэлтийн мэдээлэл болон Төлбөрийн мэдээлэл */}
           <div className="flex flex-col gap-8">
-            {/* Форм */}
             <div className="border border-gray-200 p-8">
               <h2 className="mb-6 text-xs font-bold tracking-widest uppercase">Хүргэлтийн мэдээлэл</h2>
               <form onSubmit={handleSubmitOrder} className="flex flex-col gap-5">
@@ -134,7 +145,7 @@ function CheckoutContent() {
                   <textarea
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Дүүрэг, хороо, байр, орцны код"
+                    placeholder="Дүүрэг, хороо, байр"
                     rows={3}
                     className="w-full rounded-none border border-gray-300 bg-transparent p-3 text-sm focus:border-black focus:outline-none"
                     required
@@ -150,26 +161,8 @@ function CheckoutContent() {
                 </button>
               </form>
             </div>
-
-            {/* Төлбөр хийх банкны мэдээлэл болон QR */}
-            <div className="border border-gray-200 p-8">
-              <h2 className="mb-4 text-xs font-bold tracking-widest uppercase">Төлбөр төлөх мэдээлэл</h2>
-              <div className="space-y-3 text-xs text-gray-600 leading-relaxed">
-                <p className="font-semibold text-gray-900">Хаан банк: <span className="font-normal">5000123456 (Брэндийн нэр)</span></p>
-                <p className="font-semibold text-gray-900">Гүйлгээний утга: <span className="font-normal">Утасны дугаараа бичнэ үү</span></p>
-              </div>
-
-              {/* QR Код хэсэг (Жишээ зураг байрлуулсан) */}
-              <div className="mt-6 flex flex-col items-center justify-center border border-dashed border-gray-200 p-4">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">SocialPay / QPay QR</p>
-                <div className="h-32 w-32 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
-                  QR CODE
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* Баруун тал: Сагсны хураангуй */}
           <div className="border border-gray-200 p-8 h-fit">
             <h2 className="mb-6 text-xs font-bold tracking-widest uppercase">Таны захиалга ({cart.length})</h2>
 
@@ -181,7 +174,7 @@ function CheckoutContent() {
                   <div key={item.id} className="flex items-center justify-between border-b border-gray-100 pb-4">
                     <div>
                       <p className="text-sm font-medium">{item.title}</p>
-                      <p className="text-xs text-gray-400 mt-1">Тоо ширхэг: {item.quantity}</p>
+                      <p className="text-xs text-gray-400 mt-1">Тоо: {item.quantity}</p>
                     </div>
                     <p className="text-sm font-semibold">
                       {(Number(item.price) * item.quantity).toLocaleString()} ₮
@@ -191,7 +184,7 @@ function CheckoutContent() {
 
                 <div className="mt-6 border-t border-gray-200 pt-6">
                   <div className="flex items-center justify-between text-base font-bold">
-                    <span className="text-xs uppercase tracking-widest">Нийт дүүн:</span>
+                    <span className="text-xs uppercase tracking-widest">Нийт дүн:</span>
                     <span>{totalPrice.toLocaleString()} ₮</span>
                   </div>
                 </div>

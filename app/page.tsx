@@ -9,21 +9,42 @@ export default function HomePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  
   const { cart, addToCart, removeFromCart } = useCartStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'ready' | 'preorder'>('all');
 
   useEffect(() => {
-    async function fetchProducts() {
+    async function initData() {
+      // Хэрэглэгч нэвтэрсэн эсэхийг шалгах
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+
+      // Бараа татах
       const { data, error } = await supabase.from('products').select('*');
       if (!error && data) {
         setProducts(data);
       }
       setLoading(false);
     }
-    fetchProducts();
+    initData();
+
+    // Auth төлөв өөрчлөгдөхөд сонсох
+    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -39,10 +60,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      {/* Премиум загвартай Header & Menu */}
+      {/* Header */}
       <header className="sticky top-0 z-40 border-b border-gray-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          {/* Зүүн талын цэсүүд */}
           <nav className="hidden md:flex items-center gap-8 text-xs font-medium tracking-widest uppercase">
             <button 
               onClick={() => setFilterType('all')}
@@ -64,16 +84,31 @@ export default function HomePage() {
             </button>
           </nav>
 
-          {/* Гол лого */}
           <Link href="/" className="text-xl font-black tracking-[0.25em]">
             MY BRAND
           </Link>
 
-          {/* Баруун талын үйлдлүүд */}
           <div className="flex items-center gap-6 text-xs font-medium tracking-wider uppercase">
             <Link href="/admin" className="hidden sm:inline-block text-gray-500 hover:text-black transition">
               Админ
             </Link>
+
+            {user ? (
+              <div className="flex items-center gap-3">
+                <span className="hidden lg:inline text-gray-500 text-[10px]">{user.email}</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-red-500 hover:underline text-xs"
+                >
+                  Гарах
+                </button>
+              </div>
+            ) : (
+              <Link href="/login" className="text-black font-bold hover:underline">
+                Нэвтрэх
+              </Link>
+            )}
+
             <button
               onClick={() => setIsCartOpen(true)}
               className="flex items-center gap-1.5 font-semibold text-black hover:opacity-70 transition"
@@ -89,15 +124,12 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="mx-auto max-w-7xl px-6 py-12">
-        {/* Banner / Intro Title */}
         <div className="mb-12 text-center">
           <h1 className="text-3xl font-light tracking-widest sm:text-4xl uppercase">Шинэ Улирал</h1>
           <p className="mt-2 text-sm text-gray-400">Чанар болон загварыг эрхэмлэгчдэд</p>
         </div>
 
-        {/* Хайлт болон шүүлтүүр */}
         <div className="mb-10 flex flex-col items-center justify-between gap-4 sm:flex-row">
-          {/* Хайлтын талбар */}
           <input
             type="text"
             placeholder="Хайх..."
@@ -106,7 +138,6 @@ export default function HomePage() {
             className="w-full rounded-none border-b border-gray-300 bg-transparent px-2 py-2 text-sm focus:border-black focus:outline-none sm:w-72"
           />
 
-          {/* Шүүх товчлуурууд */}
           <div className="flex gap-4 text-xs font-semibold tracking-wider">
             <button
               onClick={() => setFilterType('all')}
@@ -151,10 +182,6 @@ export default function HomePage() {
                         src={imgSrc}
                         alt={product.title}
                         className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-105"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            'https://placehold.co/600x800?text=No+Image';
-                        }}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
