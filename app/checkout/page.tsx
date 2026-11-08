@@ -18,7 +18,6 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  // Хэрэглэгч нэвтэрсэн эсэх болон өмнөх захиалгын мэдээллээс автоматаар татах
   useEffect(() => {
     async function fetchUserData() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -26,12 +25,10 @@ function CheckoutContent() {
         const user = session.user;
         setUserId(user.id);
         
-        // Хэрэглэгчийн metadata эсвэл хамгийн сүүлд өгсөн захиалгын мэдээллээс хаяг, утасны дугаарыг автоматаар олох
         if (user.user_metadata?.full_name) {
           setCustomerName(user.user_metadata.full_name);
         }
 
-        // Энэ хэрэглэгчийн өмнө нь захиалж байсан хамгийн сүүлийн хаяг, утасны дугаарыг автоматаар татаж авчирна
         const { data: lastOrder } = await supabase
           .from('orders')
           .select('customer_name, phone_number, address')
@@ -66,7 +63,43 @@ function CheckoutContent() {
 
     setLoading(true);
 
-    // 1. Database рүү захиалга хадгалах
+    // 1. Сагсанд байгаа бараа тус бүрийн үлдэгдлийг шалгах болон шинэчлэх
+    for (const item of cart) {
+      const { data: prodData, error: fetchError } = await supabase
+        .from('products')
+        .select('stock, title')
+        .eq('id', item.id)
+        .single();
+
+      if (fetchError || !prodData) {
+        alert(`"${item.title}" бараа олдсонгүй.`);
+        setLoading(false);
+        return;
+      }
+
+      const currentStock = prodData.stock ?? 10;
+
+      // Үлдэгдэл хүрэлцэхгүй эсвэл дууссан бол
+      if (currentStock <= 0 || currentStock < item.quantity) {
+        alert(`"${prodData.title}" барааны үлдэгдэл хүрэлцэхгүй байна! (Үлдэгдэл: ${currentStock})`);
+        setLoading(false);
+        return;
+      }
+
+      // Барааны үлдэгдлийг хасаж шинэчлэх (Stock = Stock - quantity)
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ stock: currentStock - item.quantity })
+        .eq('id', item.id);
+
+      if (updateError) {
+        alert(`Барааны үлдэгдэл шинэчлэхэд алдаа гарлаа: ${updateError.message}`);
+        setLoading(false);
+        return;
+      }
+    }
+
+    // 2. Database рүү захиалга хадгалах
     const { error } = await supabase.from('orders').insert([
       {
         customer_name: customerName,
@@ -83,7 +116,7 @@ function CheckoutContent() {
       alert('Захиалга илгээхэд алдаа гарлаа: ' + error.message);
       setLoading(false);
     } else {
-      // 2. Захиалга амжилттай болсны дараа Resend API ашиглан имэйл илгээх
+      // 3. Resend API ашиглан имэйл илгээх
       try {
         const { data: { session } } = await supabase.auth.getSession();
         await fetch('/api/send-email', {
@@ -113,7 +146,7 @@ function CheckoutContent() {
         <div className="max-w-md border border-gray-200 p-8 shadow-sm">
           <h1 className="text-xl font-light tracking-widest uppercase mb-4">Захиалга амжилттай!</h1>
           <p className="text-xs text-gray-600 leading-relaxed mb-6">
-            Таны захиалгыг амжилттай хүлээн авлаа. Бүртгэлтэй имэйл хаяг руу захиалгын мэдээлэл илгээгдлээ. Бид тун удаан тантай холбогдох болно.
+            Таны захиалгыг амжилттай хүлээн авлаа. Барааны үлдэгдэл амжилттай хасагдлаа. Бид тун удахгүй тантай холбогдох болно.
           </p>
           <Link
             href="/"
@@ -149,7 +182,6 @@ function CheckoutContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
-            {/* Зүүн тал: Захиалагчийн мэдээлэл оруулах форм */}
             <form onSubmit={handleSubmitOrder} className="flex flex-col gap-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-bold tracking-widest uppercase text-gray-400">Хүргэлтийн мэдээлэл</h2>
@@ -197,11 +229,10 @@ function CheckoutContent() {
                 disabled={loading}
                 className="mt-4 w-full bg-black py-3.5 text-xs font-bold tracking-widest text-white uppercase hover:bg-gray-800 disabled:bg-gray-200 transition"
               >
-                {loading ? 'Илгээж байна...' : 'Захиалга баталгаажуулах'}
+                {loading ? 'Шалгаж байна...' : 'Захиалга баталгаажуулах'}
               </button>
             </form>
 
-            {/* Баруун тал: Сагсны тойм */}
             <div className="border border-gray-200 p-8 h-fit bg-gray-50/50">
               <h2 className="text-xs font-bold tracking-widest uppercase text-gray-400 mb-6">Таны сагс ({cart.length})</h2>
               
