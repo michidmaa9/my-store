@@ -8,7 +8,6 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Админ нууц үг
   const ADMIN_PASSWORD = 'admin123';
 
   const [products, setProducts] = useState<any[]>([]);
@@ -16,14 +15,13 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
   const [loading, setLoading] = useState(true);
 
-  // Шинэ барааны state
+  // Бараа нэмэх state-үүд
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isPreorder, setIsPreorder] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Нууц үг шалгах
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === ADMIN_PASSWORD) {
@@ -34,18 +32,15 @@ export default function AdminPage() {
     }
   };
 
-  // Дата татах (Бараа болон Захиалга)
   const fetchAllData = async () => {
     setLoading(true);
     
-    // Бараа татах
     const { data: prodData } = await supabase
       .from('products')
       .select('*')
       .order('id', { ascending: false });
     if (prodData) setProducts(prodData);
 
-    // Захиалга татах
     const { data: orderData } = await supabase
       .from('orders')
       .select('*')
@@ -55,12 +50,35 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  // Бараа нэмэх
+  // Бараа нэмэх (Зураг upload хийх логиктой)
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !price) return alert('Барааны нэр болон үнийг оруулна уу!');
 
     setSubmitting(true);
+    let imageUrl = '';
+
+    // Хэрэв зураг сонгосон бол Supabase Storage рүү upload хийх
+    if (imageFile) {
+      const fileName = `${Date.now()}-${imageFile.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(fileName, imageFile);
+
+      if (uploadError) {
+        alert('Зураг хуулахад алдаа гарлаа: ' + uploadError.message);
+        setSubmitting(false);
+        return;
+      }
+
+      // Public URL авах
+      const { data: publicUrlData } = supabase.storage
+        .from('products')
+        .getPublicUrl(fileName);
+
+      imageUrl = publicUrlData.publicUrl;
+    }
+
     const { error } = await supabase.from('products').insert([
       {
         title,
@@ -76,14 +94,13 @@ export default function AdminPage() {
       alert('Бараа амжилттай нэмэгдлээ!');
       setTitle('');
       setPrice('');
-      setImageUrl('');
+      setImageFile(null);
       setIsPreorder(false);
       fetchAllData();
     }
     setSubmitting(false);
   };
 
-  // Бараа устгах
   const handleDeleteProduct = async (id: number) => {
     if (!confirm('Энэ барааг устгахдаа итгэлтэй байна уу?')) return;
 
@@ -95,7 +112,6 @@ export default function AdminPage() {
     }
   };
 
-  // Захиалгын төлөв шинэчлэх функц
   const handleUpdateStatus = async (orderId: number, newStatus: string) => {
     const { error } = await supabase
       .from('orders')
@@ -113,7 +129,6 @@ export default function AdminPage() {
     }
   };
 
-  // Нууц үг нэхэх хэсэг
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white p-6">
@@ -155,7 +170,6 @@ export default function AdminPage() {
           </Link>
         </div>
 
-        {/* Таб сонгох хэсэг */}
         <div className="mb-8 flex gap-6 text-xs font-bold tracking-widest uppercase">
           <button
             onClick={() => setActiveTab('products')}
@@ -179,10 +193,8 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* 1. БАРААНЫ УДИРДЛАГА ХЭСЭГ */}
         {activeTab === 'products' && (
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
-            {/* Шинэ бараа нэмэх Форм */}
             <div className="border border-gray-200 p-6 h-fit">
               <h2 className="mb-6 text-xs font-bold tracking-widest uppercase">Шинэ бараа нэмэх</h2>
               <form onSubmit={handleAddProduct} className="flex flex-col gap-4">
@@ -211,13 +223,12 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Зургийн URL</label>
+                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Зураг сонгох (File)</label>
                   <input
-                    type="text"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full rounded-none border-b border-gray-300 bg-transparent px-2 py-2 text-sm focus:border-black focus:outline-none"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-none file:border-0 file:text-xs file:font-bold file:bg-black file:text-white hover:file:bg-gray-800"
                   />
                 </div>
 
@@ -239,12 +250,11 @@ export default function AdminPage() {
                   disabled={submitting}
                   className="mt-4 w-full bg-black py-3 text-xs font-bold tracking-widest text-white uppercase hover:bg-gray-800 disabled:bg-gray-200 transition"
                 >
-                  {submitting ? 'Нэмж байна...' : 'Бараа оруулах'}
+                  {submitting ? 'Хуулж байна...' : 'Бараа оруулах'}
                 </button>
               </form>
             </div>
 
-            {/* Барааны жагсаалт */}
             <div className="border border-gray-200 p-6 lg:col-span-2">
               <h2 className="mb-6 text-xs font-bold tracking-widest uppercase">Барааны жагсаалт</h2>
               {loading ? (
@@ -292,7 +302,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 2. ЗАХИАЛГУУДЫН ХЭСЭГ */}
         {activeTab === 'orders' && (
           <div className="border border-gray-200 p-6">
             <h2 className="mb-6 text-xs font-bold tracking-widest uppercase">Ирсэн захиалгууд</h2>
@@ -345,7 +354,6 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* Захиалсан бараанууд */}
                       <div className="mt-4">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Захиалсан бараанууд:</p>
                         <div className="flex flex-col gap-1.5">
@@ -358,7 +366,6 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* Төлөв өөрчлөх товчлуурууд */}
                       <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
                         <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mr-2">Төлөв өөрчлөх:</span>
                         <button
