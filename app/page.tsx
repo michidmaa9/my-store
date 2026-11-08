@@ -11,7 +11,7 @@ export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   
-  const { cart, addToCart, removeFromCart } = useCartStore();
+  const { cart, addToCart, removeFromCart, toastMessage } = useCartStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -43,11 +43,9 @@ export default function HomePage() {
     setUser(null);
   };
 
-  // Бараа шүүх (Хайлт болон Ангилал)
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Ангиллаар шүүх логик
     if (selectedCategory !== 'all') {
       return matchesSearch && product.category === selectedCategory;
     }
@@ -117,7 +115,6 @@ export default function HomePage() {
           <p className="mt-2 text-sm text-gray-400">Чанар болон загварыг эрхэмлэгчдэд</p>
         </div>
 
-        {/* Хайлт болон Ангиллын шүүлтүүр */}
         <div className="mb-10 flex flex-col items-center justify-between gap-6 sm:flex-row">
           <input
             type="text"
@@ -275,12 +272,13 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
       {/* Toast Notification */}
-{cartStoreToast && (
-  <div className="fixed bottom-6 right-6 z-50 bg-black text-white px-6 py-3 text-xs font-bold tracking-widest uppercase shadow-2xl transition-all duration-300">
-    {cartStoreToast}
-  </div>
-)}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-black text-white px-6 py-3 text-xs font-bold tracking-widest uppercase shadow-2xl transition-all duration-300">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }
