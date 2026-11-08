@@ -1,26 +1,27 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabase';
+import { useParams } from 'next/navigation';
 import { useCartStore } from '../../store/useCartStore';
+import { supabase } from '../../lib/supabase';
 
-function ProductDetailContent() {
+export default function ProductDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const id = params?.id;
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState('M');
+  const [quantity, setQuantity] = useState(1);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  
-  const { cart, addToCart, removeFromCart } = useCartStore();
+
+  const { cart, addToCart, removeFromCart, toastMessage } = useCartStore();
 
   useEffect(() => {
     if (!id) return;
-    async function fetchProductDetail() {
+
+    async function fetchProduct() {
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -29,35 +30,48 @@ function ProductDetailContent() {
 
       if (!error && data) {
         setProduct(data);
+        // Хэрэв бараа размеруудтай бол эхнийхийг нь сонгох
+        if (data.sizes) {
+          const sizeList = data.sizes.split(',').map((s: string) => s.trim());
+          if (sizeList.length > 0) setSelectedSize(sizeList[0]);
+        }
       }
       setLoading(false);
     }
-    fetchProductDetail();
+
+    fetchProduct();
   }, [id]);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white text-gray-400 text-xs tracking-widest uppercase">
-        Уншиж байна...
+      <div className="flex min-h-screen items-center justify-center bg-white text-xs tracking-widest uppercase text-gray-400">
+        Ачаалж байна...
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-white text-gray-900">
-        <p className="text-sm tracking-widest uppercase mb-4">Бараа олдсонгүй</p>
-        <Link href="/" className="text-xs font-bold tracking-widest underline uppercase">
-          Нүүр хуудас руу буцах
+      <div className="flex min-h-screen flex-col items-center justify-center bg-white text-center text-gray-900 p-6">
+        <h1 className="text-xl font-light tracking-widest uppercase mb-4">Бараа олдсонгүй</h1>
+        <Link href="/" className="bg-black px-6 py-3 text-xs font-bold tracking-widest text-white uppercase hover:bg-gray-800 transition">
+          Дэлгүүр рүү буцах
         </Link>
       </div>
     );
   }
 
   const imgSrc = product.image_url || product.imageUrl;
+  const availableSizes = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()) : ['S', 'M', 'L', 'XL'];
 
-  const handleAddToCartWithSize = () => {
-    addToCart({ ...product, title: `${product.title} (Размер: ${selectedSize})` });
+  const handleAddToCart = () => {
+    // Размер болон тоо ширхэгтэй хамт сагслах
+    for (let i = 0; i < quantity; i++) {
+      addToCart({
+        ...product,
+        title: `${product.title} (${selectedSize})`,
+      });
+    }
     setIsCartOpen(true);
   };
 
@@ -74,7 +88,7 @@ function ProductDetailContent() {
           </Link>
           <button
             onClick={() => setIsCartOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase text-black"
+            className="flex items-center gap-1.5 font-semibold text-black hover:opacity-70 transition text-xs uppercase"
           >
             <span>Сагс</span>
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-[10px] text-white">
@@ -84,10 +98,10 @@ function ProductDetailContent() {
         </div>
       </header>
 
-      {/* Product Detail Section */}
+      {/* Main Product Section */}
       <main className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
-          {/* Зургийн хэсэг */}
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
+          {/* Зураг */}
           <div className="relative aspect-[3/4] w-full overflow-hidden bg-gray-100">
             {product.is_preorder && (
               <span className="absolute top-4 left-4 z-10 bg-black px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase">
@@ -95,11 +109,7 @@ function ProductDetailContent() {
               </span>
             )}
             {imgSrc ? (
-              <img
-                src={imgSrc}
-                alt={product.title}
-                className="h-full w-full object-cover object-center"
-              />
+              <img src={imgSrc} alt={product.title} className="h-full w-full object-cover object-center" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
                 Зураггүй
@@ -108,49 +118,66 @@ function ProductDetailContent() {
           </div>
 
           {/* Мэдээлэл болон сонголтууд */}
-          <div className="flex flex-col justify-center">
-            <h1 className="text-2xl font-light tracking-wide uppercase sm:text-3xl">{product.title}</h1>
-            <p className="mt-4 text-xl font-medium tracking-wider text-gray-900">
-              {Number(product.price).toLocaleString()} ₮
-            </p>
+          <div className="flex flex-col justify-between">
+            <div>
+              <span className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
+                {product.category || 'Бүтээгдэхүүн'}
+              </span>
+              <h1 className="text-2xl font-light tracking-wide uppercase mt-1 mb-3">{product.title}</h1>
+              <p className="text-xl font-bold text-gray-900 mb-6">
+                {Number(product.price).toLocaleString()} ₮
+              </p>
 
-            <div className="my-8 h-[1px] w-full bg-gray-100" />
+              <div className="border-t border-gray-100 py-6">
+                <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-3">Размер сонгох:</p>
+                <div className="flex flex-wrap gap-3">
+                  {availableSizes.map((size: string) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`h-12 w-12 border text-xs font-bold tracking-widest uppercase transition ${
+                        selectedSize === size
+                          ? 'border-black bg-black text-white'
+                          : 'border-gray-200 bg-white text-gray-800 hover:border-black'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            {/* Размер сонгох */}
-            <div className="mb-8">
-              <label className="mb-3 block text-xs font-bold tracking-widest uppercase text-gray-500">
-                Размер: <span className="text-black font-extrabold">{selectedSize}</span>
-              </label>
-              <div className="flex gap-3">
-                {['S', 'M', 'L', 'XL'].map((size) => (
+              <div className="border-t border-gray-100 py-6">
+                <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-3">Тоо ширхэг:</p>
+                <div className="flex items-center w-32 border border-gray-200">
                   <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`h-12 w-12 rounded-none border text-xs font-bold tracking-widest transition ${
-                      selectedSize === size
-                        ? 'border-black bg-black text-white'
-                        : 'border-gray-200 bg-white text-gray-800 hover:border-black'
-                    }`}
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-4 py-2.5 text-sm font-bold hover:bg-gray-100 transition"
                   >
-                    {size}
+                    -
                   </button>
-                ))}
+                  <span className="flex-1 text-center text-xs font-bold">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="px-4 py-2.5 text-sm font-bold hover:bg-gray-100 transition"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-100 py-6 text-xs text-gray-600 leading-relaxed">
+                <p>• Үлдэгдэл: <span className="font-semibold text-black">{product.stock ?? 10} ширхэг</span></p>
+                <p className="mt-1">• Хүргэлт: Улаанбаатар хотод 24-48 цагт хүргэгдэнэ.</p>
               </div>
             </div>
 
-            {/* Сагслах товч */}
             <button
-              onClick={handleAddToCartWithSize}
-              className="w-full bg-black py-4 text-xs font-bold tracking-[0.2em] text-white uppercase hover:bg-gray-800 transition"
+              onClick={handleAddToCart}
+              className="w-full bg-black py-4 text-xs font-bold tracking-widest text-white uppercase hover:bg-gray-800 transition mt-6"
             >
               Сагсанд нэмэх
             </button>
-
-            {/* Нэмэлт тайлбар */}
-            <div className="mt-10 text-xs text-gray-500 leading-relaxed tracking-wide">
-              <p className="font-bold text-gray-800 mb-1 uppercase tracking-widest">Хүргэлтийн мэдээлэл</p>
-              Улаанбаатар хот дотор 24-48 цагийн дотор хүргэгдэнэ. Орон нутгийн унаанд явуулах боломжтой.
-            </div>
           </div>
         </div>
       </main>
@@ -209,14 +236,13 @@ function ProductDetailContent() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
 
-export default function ProductDetailPage() {
-  return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-white text-xs tracking-widest uppercase text-gray-400">Ачаалж байна...</div>}>
-      <ProductDetailContent />
-    </Suspense>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-black text-white px-6 py-3 text-xs font-bold tracking-widest uppercase shadow-2xl transition-all duration-300">
+          {toastMessage}
+        </div>
+      )}
+    </div>
   );
 }
