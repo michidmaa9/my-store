@@ -9,7 +9,7 @@ function OrdersContent() {
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
 
   useEffect(() => {
     async function fetchUserOrders() {
@@ -21,7 +21,7 @@ function OrdersContent() {
         return;
       }
 
-      setUserEmail(session.user.email);
+      setUserEmail(session.user.email || '');
 
       // Тухайн хэрэглэгчийн захиалгуудыг database-ээс татах
       const { data, error } = await supabase
