@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '../store/useCartStore';
 import { supabase } from '../lib/supabase';
 
-export default function CheckoutPage() {
-  const router = useRouter(); // router гэж зөв болголоо
+function CheckoutContent() {
+  const router = useRouter();
   const { cart, clearCart } = useCartStore();
 
   const [customerName, setCustomerName] = useState('');
@@ -16,13 +16,12 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  // Нийт төлөх дүн бодож гаргах
+  // Нийт төлөх дүн бодох
   const totalPrice = cart.reduce(
     (acc, item) => acc + Number(item.price) * item.quantity,
     0
   );
 
-  // Захиалга илгээх функц
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -38,7 +37,6 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
 
-    // Supabase-ийн 'orders' хүснэгт рүү захиалга хадгалах
     const { error } = await supabase.from('orders').insert([
       {
         customer_name: customerName,
@@ -54,7 +52,7 @@ export default function CheckoutPage() {
       alert('Захиалга илгээхэд алдаа гарлаа: ' + error.message);
     } else {
       setOrderSuccess(true);
-      clearCart(); // Сагсыг цэвэрлэх
+      clearCart();
     }
 
     setSubmitting(false);
@@ -62,18 +60,18 @@ export default function CheckoutPage() {
 
   if (orderSuccess) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6 text-center">
-        <div className="w-full max-w-md rounded-2xl border bg-white p-8 shadow-sm">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 text-2xl font-bold">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-white p-6 text-center">
+        <div className="w-full max-w-md rounded-none border border-gray-200 p-8 shadow-sm">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-black text-white text-lg font-bold">
             ✓
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Захиалга амжилттай!</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Бид таны захиалгыг хүлээн авлаа. Бэлэн мөнгө болон дансны шилжүүлгээр төлбөрөө хийснээр хүргэлт хийгдэнэ.
+          <h1 className="text-lg font-bold tracking-widest uppercase">Захиалга амжилттай!</h1>
+          <p className="mt-3 text-xs text-gray-500 leading-relaxed tracking-wide">
+            Бид таны захиалгыг хүлээн авлаа. Дээрх данс руу шилжүүлэг хийснээр таны захиалга баталгаажиж хүргэлтэд гарах болно.
           </p>
           <Link
             href="/"
-            className="mt-6 inline-block w-full rounded-xl bg-black py-3 text-sm font-medium text-white hover:bg-gray-800"
+            className="mt-6 inline-block w-full bg-black py-3.5 text-xs font-bold tracking-widest text-white uppercase hover:bg-gray-800 transition"
           >
             Нүүр хуудас руу буцах
           </Link>
@@ -83,106 +81,133 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 text-gray-900 md:p-12">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Захиалга Баталгаажуулах</h1>
-          <Link
-            href="/"
-            className="rounded-lg border bg-white px-4 py-2 text-sm font-medium hover:bg-gray-100"
-          >
-            ← Буцах
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b border-gray-100 bg-white/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          <Link href="/" className="text-xs font-bold tracking-widest uppercase text-gray-600 hover:text-black">
+            ← Дэлгүүр рүү буцах
           </Link>
+          <Link href="/" className="text-xl font-black tracking-[0.25em]">
+            MY BRAND
+          </Link>
+          <div className="w-16" />
         </div>
+      </header>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-          {/* Захиалагчийн мэдээлэл авах форм */}
-          <div className="rounded-2xl border bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-xl font-bold">Хүргэлтийн мэдээлэл</h2>
-            <form onSubmit={handleSubmitOrder} className="flex flex-col gap-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">Нэр *</label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Захиалагчийн нэр"
-                  className="w-full rounded-lg border p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
+      <main className="mx-auto max-w-5xl px-6 py-12">
+        <h1 className="mb-10 text-xl font-light tracking-widest uppercase text-center">Захиалга баталгаажуулах</h1>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium">Утасны дугаар *</label>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="99112233"
-                  className="w-full rounded-lg border p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium">Хүргэлтийн хаяг *</label>
-                <textarea
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Дүүрэг, хороо, байр, хаалганы дугаар"
-                  rows={3}
-                  className="w-full rounded-lg border p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting || cart.length === 0}
-                className="mt-4 w-full rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 disabled:bg-gray-300"
-              >
-                {submitting ? 'Захиалж байна...' : 'Захиалга Илгээх'}
-              </button>
-            </form>
-          </div>
-
-          {/* Сагсан дахь барааны хураангуй */}
-          <div className="flex flex-col justify-between rounded-2xl border bg-white p-6 shadow-sm">
-            <div>
-              <h2 className="mb-4 text-xl font-bold">Сонгосон бараанууд ({cart.length})</h2>
-              {cart.length === 0 ? (
-                <p className="text-gray-500">Сагсанд бараа байхгүй байна.</p>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {cart.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between border-b pb-3"
-                    >
-                      <div>
-                        <p className="font-bold">{item.title}</p>
-                        <p className="text-sm text-gray-500">
-                          {Number(item.price).toLocaleString()} ₮ x {item.quantity}
-                        </p>
-                      </div>
-                      <p className="font-semibold text-amber-600">
-                        {(Number(item.price) * item.quantity).toLocaleString()} ₮
-                      </p>
-                    </div>
-                  ))}
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
+          {/* Зүүн тал: Хүргэлтийн мэдээлэл болон Төлбөрийн мэдээлэл */}
+          <div className="flex flex-col gap-8">
+            {/* Форм */}
+            <div className="border border-gray-200 p-8">
+              <h2 className="mb-6 text-xs font-bold tracking-widest uppercase">Хүргэлтийн мэдээлэл</h2>
+              <form onSubmit={handleSubmitOrder} className="flex flex-col gap-5">
+                <div>
+                  <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-gray-600">Нэр *</label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Таны нэр"
+                    className="w-full rounded-none border-b border-gray-300 bg-transparent px-2 py-2 text-sm focus:border-black focus:outline-none"
+                    required
+                  />
                 </div>
-              )}
+
+                <div>
+                  <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-gray-600">Утасны дугаар *</label>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="99112233"
+                    className="w-full rounded-none border-b border-gray-300 bg-transparent px-2 py-2 text-sm focus:border-black focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-gray-600">Хүргэлтийн хаяг *</label>
+                  <textarea
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Дүүрэг, хороо, байр, орцны код"
+                    rows={3}
+                    className="w-full rounded-none border border-gray-300 bg-transparent p-3 text-sm focus:border-black focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting || cart.length === 0}
+                  className="mt-4 w-full bg-black py-4 text-xs font-bold tracking-[0.2em] text-white uppercase hover:bg-gray-800 disabled:bg-gray-200 transition"
+                >
+                  {submitting ? 'Илгээж байна...' : 'Захиалга баталгаажуулах'}
+                </button>
+              </form>
             </div>
 
-            <div className="mt-6 border-t pt-4">
-              <div className="flex items-center justify-between text-lg font-bold">
-                <span>Нийт төлөх дүн:</span>
-                <span className="text-amber-600">{totalPrice.toLocaleString()} ₮</span>
+            {/* Төлбөр хийх банкны мэдээлэл болон QR */}
+            <div className="border border-gray-200 p-8">
+              <h2 className="mb-4 text-xs font-bold tracking-widest uppercase">Төлбөр төлөх мэдээлэл</h2>
+              <div className="space-y-3 text-xs text-gray-600 leading-relaxed">
+                <p className="font-semibold text-gray-900">Хаан банк: <span className="font-normal">5000123456 (Брэндийн нэр)</span></p>
+                <p className="font-semibold text-gray-900">Гүйлгээний утга: <span className="font-normal">Утасны дугаараа бичнэ үү</span></p>
+              </div>
+
+              {/* QR Код хэсэг (Жишээ зураг байрлуулсан) */}
+              <div className="mt-6 flex flex-col items-center justify-center border border-dashed border-gray-200 p-4">
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">SocialPay / QPay QR</p>
+                <div className="h-32 w-32 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+                  QR CODE
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Баруун тал: Сагсны хураангуй */}
+          <div className="border border-gray-200 p-8 h-fit">
+            <h2 className="mb-6 text-xs font-bold tracking-widest uppercase">Таны захиалга ({cart.length})</h2>
+
+            {cart.length === 0 ? (
+              <p className="text-xs text-gray-400">Сагс хоосон байна.</p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {cart.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <div>
+                      <p className="text-sm font-medium">{item.title}</p>
+                      <p className="text-xs text-gray-400 mt-1">Тоо ширхэг: {item.quantity}</p>
+                    </div>
+                    <p className="text-sm font-semibold">
+                      {(Number(item.price) * item.quantity).toLocaleString()} ₮
+                    </p>
+                  </div>
+                ))}
+
+                <div className="mt-6 border-t border-gray-200 pt-6">
+                  <div className="flex items-center justify-between text-base font-bold">
+                    <span className="text-xs uppercase tracking-widest">Нийт дүүн:</span>
+                    <span>{totalPrice.toLocaleString()} ₮</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-white text-xs tracking-widest uppercase text-gray-400">Ачаалж байна...</div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }
