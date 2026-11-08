@@ -7,7 +7,7 @@ import { useCartStore } from '../store/useCartStore';
 import { supabase } from '../lib/supabase';
 
 export default function CheckoutPage() {
-  const router = Router();
+  const router = useRouter(); // router гэж зөв болголоо
   const { cart, clearCart } = useCartStore();
 
   const [customerName, setCustomerName] = useState('');
@@ -45,8 +45,8 @@ export default function CheckoutPage() {
         phone_number: phoneNumber,
         address: address,
         total_price: totalPrice,
-        items: cart, // Захиалсан бараануудын жагсаалтыг JSON байдлаар хадгалах
-        status: 'pending', // Захиалгын төлөв: хүлээгдэж буй
+        items: cart,
+        status: 'pending',
       },
     ]);
 
@@ -147,7 +147,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* Сагсан дахь барааны хураангуй */}
-          <div className="rounded-2xl border bg-white p-6 shadow-sm flex flex-col justify-between">
+          <div className="flex flex-col justify-between rounded-2xl border bg-white p-6 shadow-sm">
             <div>
               <h2 className="mb-4 text-xl font-bold">Сонгосон бараанууд ({cart.length})</h2>
               {cart.length === 0 ? (
@@ -174,7 +174,7 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            <div className="border-t pt-4 mt-6">
+            <div className="mt-6 border-t pt-4">
               <div className="flex items-center justify-between text-lg font-bold">
                 <span>Нийт төлөх дүн:</span>
                 <span className="text-amber-600">{totalPrice.toLocaleString()} ₮</span>
