@@ -19,6 +19,8 @@ export default function AdminPage() {
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('hoodie');
+  const [stock, setStock] = useState('10');
+  const [sizes, setSizes] = useState('S, M, L, XL');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isPreorder, setIsPreorder] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -51,7 +53,7 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  // Бараа нэмэх (Зураг болон ангилал хамт хадгалах)
+  // Бараа нэмэх (Stock болон Sizes хамт хадгалах)
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !price) return alert('Барааны нэр болон үнийг оруулна уу!');
@@ -59,7 +61,6 @@ export default function AdminPage() {
     setSubmitting(true);
     let imageUrl = '';
 
-    // Хэрэв зураг сонгосон бол Supabase Storage рүү upload хийх
     if (imageFile) {
       const fileName = `${Date.now()}-${imageFile.name}`;
       const { error: uploadError } = await supabase.storage
@@ -72,7 +73,6 @@ export default function AdminPage() {
         return;
       }
 
-      // Public URL авах
       const { data: publicUrlData } = supabase.storage
         .from('products')
         .getPublicUrl(fileName);
@@ -85,6 +85,8 @@ export default function AdminPage() {
         title,
         price: Number(price),
         category,
+        stock: Number(stock) || 0,
+        sizes,
         image_url: imageUrl,
         is_preorder: isPreorder,
       },
@@ -97,6 +99,8 @@ export default function AdminPage() {
       setTitle('');
       setPrice('');
       setCategory('hoodie');
+      setStock('10');
+      setSizes('S, M, L, XL');
       setImageFile(null);
       setIsPreorder(false);
       fetchAllData();
@@ -239,6 +243,29 @@ export default function AdminPage() {
                   </select>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Үлдэгдэл (Stock)</label>
+                    <input
+                      type="number"
+                      value={stock}
+                      onChange={(e) => setStock(e.target.value)}
+                      placeholder="10"
+                      className="w-full rounded-none border-b border-gray-300 bg-transparent px-2 py-2 text-sm focus:border-black focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Размерууд</label>
+                    <input
+                      type="text"
+                      value={sizes}
+                      onChange={(e) => setSizes(e.target.value)}
+                      placeholder="S, M, L, XL"
+                      className="w-full rounded-none border-b border-gray-300 bg-transparent px-2 py-2 text-sm focus:border-black focus:outline-none"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Зураг сонгох (File)</label>
                   <input
@@ -299,7 +326,9 @@ export default function AdminPage() {
                           </div>
                           <div>
                             <p className="text-sm font-medium">{product.title}</p>
-                            <p className="text-xs text-gray-400 mt-0.5 uppercase tracking-wider">Ангилал: {product.category || 'all'}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Үлдэгдэл: <span className="font-semibold text-black">{product.stock ?? 10} ширхэг</span> | Размер: <span className="font-semibold text-black">{product.sizes || 'S, M, L, XL'}</span>
+                            </p>
                             <p className="text-xs font-semibold text-gray-700 mt-0.5">
                               {Number(product.price).toLocaleString()} ₮
                             </p>
