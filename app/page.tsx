@@ -238,8 +238,14 @@ export default function HomePage() {
 
       {/* Cart Drawer */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
-          <div className="flex h-full w-full max-w-md flex-col bg-white p-6 shadow-2xl">
+        <div 
+          onClick={() => setIsCartOpen(false)}
+          className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-full w-full max-w-md flex-col bg-white p-6 shadow-2xl"
+          >
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <h2 className="text-sm font-bold tracking-widest uppercase">Таны сагс</h2>
               <button
