@@ -14,15 +14,13 @@ export default function HomePage() {
   const { cart, addToCart, removeFromCart } = useCartStore();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'ready' | 'preorder'>('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   useEffect(() => {
     async function initData() {
-      // Хэрэглэгч нэвтэрсэн эсэхийг шалгах
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
 
-      // Бараа татах
       const { data, error } = await supabase.from('products').select('*');
       if (!error && data) {
         setProducts(data);
@@ -31,7 +29,6 @@ export default function HomePage() {
     }
     initData();
 
-    // Auth төлөв өөрчлөгдөхөд сонсох
     const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user || null);
     });
@@ -46,15 +43,15 @@ export default function HomePage() {
     setUser(null);
   };
 
+  // Бараа шүүх (Хайлт болон Ангилал)
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase());
     
-    if (filterType === 'ready') {
-      return matchesSearch && !product.is_preorder;
+    // Ангиллаар шүүх логик
+    if (selectedCategory !== 'all') {
+      return matchesSearch && product.category === selectedCategory;
     }
-    if (filterType === 'preorder') {
-      return matchesSearch && product.is_preorder;
-    }
+    
     return matchesSearch;
   });
 
@@ -64,29 +61,10 @@ export default function HomePage() {
       <header className="sticky top-0 z-40 border-b border-gray-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <nav className="hidden md:flex items-center gap-8 text-xs font-medium tracking-widest uppercase">
-            <button 
-              onClick={() => setFilterType('all')}
-              className="text-gray-600 hover:text-black transition"
-            >
-              Коллекци
-            </button>
-            <button 
-              onClick={() => setFilterType('ready')}
-              className="text-gray-600 hover:text-black transition"
-            >
-              Бэлэн бараа
-            </button>
-            <button 
-              onClick={() => setFilterType('preorder')}
-              className="text-gray-600 hover:text-black transition"
-            >
-              Урьдчилсан захиалга
-            </button>
+            <Link href="/contact" className="text-gray-600 hover:text-black transition">
+              Холбоо барих
+            </Link>
           </nav>
-
-          <Link href="/contact" className="text-gray-600 hover:text-black transition">
-            Холбоо барих
-          </Link>
 
           <Link href="/" className="text-xl font-black tracking-[0.25em]">
             MY BRAND
@@ -97,7 +75,6 @@ export default function HomePage() {
               Админ
             </Link>
 
-            {/* Энд "Миний захиалгууд" линкийг нэмсэн байгаа */}
             {user && (
               <Link href="/orders" className="text-gray-500 hover:text-black transition">
                 Миний захиалгууд
@@ -140,7 +117,8 @@ export default function HomePage() {
           <p className="mt-2 text-sm text-gray-400">Чанар болон загварыг эрхэмлэгчдэд</p>
         </div>
 
-        <div className="mb-10 flex flex-col items-center justify-between gap-4 sm:flex-row">
+        {/* Хайлт болон Ангиллын шүүлтүүр */}
+        <div className="mb-10 flex flex-col items-center justify-between gap-6 sm:flex-row">
           <input
             type="text"
             placeholder="Хайх..."
@@ -149,24 +127,36 @@ export default function HomePage() {
             className="w-full rounded-none border-b border-gray-300 bg-transparent px-2 py-2 text-sm focus:border-black focus:outline-none sm:w-72"
           />
 
-          <div className="flex gap-4 text-xs font-semibold tracking-wider">
+          <div className="flex flex-wrap gap-4 text-xs font-semibold tracking-wider">
             <button
-              onClick={() => setFilterType('all')}
-              className={`pb-1 transition ${filterType === 'all' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
+              onClick={() => setSelectedCategory('all')}
+              className={`pb-1 transition ${selectedCategory === 'all' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
             >
               БҮГД
             </button>
             <button
-              onClick={() => setFilterType('ready')}
-              className={`pb-1 transition ${filterType === 'ready' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
+              onClick={() => setSelectedCategory('hoodie')}
+              className={`pb-1 transition ${selectedCategory === 'hoodie' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
             >
-              БЭЛЭН
+              ХУУДИ / ЦАМЦ
             </button>
             <button
-              onClick={() => setFilterType('preorder')}
-              className={`pb-1 transition ${filterType === 'preorder' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
+              onClick={() => setSelectedCategory('pants')}
+              className={`pb-1 transition ${selectedCategory === 'pants' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
             >
-              ПРЕ-ОРДЕР
+              ӨМД
+            </button>
+            <button
+              onClick={() => setSelectedCategory('jacket')}
+              className={`pb-1 transition ${selectedCategory === 'jacket' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
+            >
+              ГАДУУР ХУВЦАС
+            </button>
+            <button
+              onClick={() => setSelectedCategory('accessories')}
+              className={`pb-1 transition ${selectedCategory === 'accessories' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
+            >
+              АКСЕССУАР
             </button>
           </div>
         </div>
