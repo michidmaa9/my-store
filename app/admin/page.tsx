@@ -53,7 +53,7 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  // Бараа нэмэх (Stock болон Sizes хамт хадгалах)
+  // Бараа нэмэх (Файлын нэрийг цэвэрлэж алдаа гаргахгүй болгосон)
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !price) return alert('Барааны нэр болон үнийг оруулна уу!');
@@ -62,7 +62,9 @@ export default function AdminPage() {
     let imageUrl = '';
 
     if (imageFile) {
-      const fileName = `${Date.now()}-${imageFile.name}`;
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      
       const { error: uploadError } = await supabase.storage
         .from('products')
         .upload(fileName, imageFile);
