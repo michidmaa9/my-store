@@ -2,17 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCartStore } from './store/useCartStore';
 import { supabase } from './lib/supabase';
 
 export default function HomePage() {
-  const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   
+  // Размер сонгох Modal-д зориулсан state-үүд
+  const [selectedProductForModal, setSelectedProductForModal] = useState<any>(null);
+  const [selectedSize, setSelectedSize] = useState<string>('');
+
   const { cart, addToCart, removeFromCart, toastMessage } = useCartStore();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,14 +57,28 @@ export default function HomePage() {
     return matchesSearch;
   });
 
+  // Сагслах товч дарахад размертай эсэхийг шалгах
   const handleAddToCartClick = (product: any) => {
     const hasSizes = product.sizes && product.sizes.trim().length > 0;
     
     if (hasSizes) {
-      router.push(`/products/${product.id}`);
+      // Размертай бараа бол Modal цонхыг нээнэ
+      setSelectedProductForModal(product);
+      const sizeList = product.sizes.split(',').map((s: string) => s.trim());
+      setSelectedSize(sizeList[0] || '');
     } else {
+      // Размергүй энгийн бараа бол шууд сагсална
       addToCart(product);
     }
+  };
+
+  // Modal дотроос размер сонгоод сагслах
+  const handleConfirmAddToCart = () => {
+    if (!selectedProductForModal) return;
+    
+    addToCart(selectedProductForModal, selectedSize, 1);
+    setSelectedProductForModal(null); // Modal хаах
+    setIsCartOpen(true); // Сагсны drawer нээх
   };
 
   return (
@@ -235,6 +251,95 @@ export default function HomePage() {
           </div>
         )}
       </main>
+
+      {/* Төрөл / Размер сонгох Modal Popup */}
+      {selectedProductForModal && (
+        <div 
+          onClick={() => setSelectedProductForModal(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-lg bg-white p-6 shadow-2xl rounded-lg max-h-[90vh] flex flex-col"
+          >
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+              <h2 className="text-sm font-bold tracking-widest uppercase">Төрөл сонгох</h2>
+              <button
+                onClick={() => setSelectedProductForModal(null)}
+                className="text-gray-400 hover:text-black text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm font-bold text-gray-900 uppercase">{selectedProductForModal.title}</p>
+              <p className="text-xs text-gray-500 mt-1">Та хүссэн төрлөө сонгоод сагсанд нэмнэ үү</p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto flex flex-col gap-3 py-2 pr-1">
+              {selectedProductForModal.sizes
+                .split(',')
+                .map((s: string) => s.trim())
+                .map((size: string) => (
+                  <div
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    className={`flex items-center justify-between border p-4 cursor-pointer transition ${
+                      selectedSize === size
+                        ? 'border-black bg-blue-50/40 ring-1 ring-black'
+                        : 'border-gray-200 hover:border-gray-400 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      {selectedProductForModal.image_url || selectedProductForModal.imageUrl ? (
+                        <img
+                          src={selectedProductForModal.image_url || selectedProductForModal.imageUrl}
+                          alt={selectedProductForModal.title}
+                          className="h-12 w-12 object-cover"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">
+                          Зураггүй
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs font-bold uppercase">{size}</p>
+                        <p className="text-xs font-semibold text-gray-900 mt-0.5">
+                          {Number(selectedProductForModal.price).toLocaleString()} ₮
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          Үлдэгдэл: {selectedProductForModal.stock ?? 999} ширхэг
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <span className={`text-lg px-3 py-1 border ${selectedSize === size ? 'bg-black text-white border-black' : 'border-gray-300 text-gray-400'}`}>
+                        🛒
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            <div className="border-t border-gray-100 pt-4 mt-4 flex gap-3">
+              <button
+                onClick={() => setSelectedProductForModal(null)}
+                className="flex-1 border border-gray-300 py-3 text-center text-xs font-bold tracking-widest text-gray-700 uppercase hover:bg-gray-100 transition"
+              >
+                Цуцлах
+              </button>
+              <button
+                onClick={handleConfirmAddToCart}
+                className="flex-1 bg-blue-600 py-3 text-center text-xs font-bold tracking-widest text-white uppercase hover:bg-blue-700 transition"
+              >
+                Сагсанд хийх
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cart Drawer */}
       {isCartOpen && (
