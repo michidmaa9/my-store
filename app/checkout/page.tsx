@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '../store/useCartStore';
 import { supabase } from '../lib/supabase';
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
   const { cart, clearCart } = useCartStore();
 
@@ -18,14 +18,36 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
+  // Хэрэглэгч нэвтэрсэн эсэх болон өмнөх захиалгын мэдээллээс автоматаар татах
   useEffect(() => {
-    async function checkUser() {
+    async function fetchUserData() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        setUserId(session.user.id);
+        const user = session.user;
+        setUserId(user.id);
+        
+        // Хэрэглэгчийн metadata эсвэл хамгийн сүүлд өгсөн захиалгын мэдээллээс хаяг, утасны дугаарыг автоматаар олох
+        if (user.user_metadata?.full_name) {
+          setCustomerName(user.user_metadata.full_name);
+        }
+
+        // Энэ хэрэглэгчийн өмнө нь захиалж байсан хамгийн сүүлийн хаяг, утасны дугаарыг автоматаар татаж авчирна
+        const { data: lastOrder } = await supabase
+          .from('orders')
+          .select('customer_name, phone_number, address')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (lastOrder) {
+          if (lastOrder.customer_name) setCustomerName(lastOrder.customer_name);
+          if (lastOrder.phone_number) setPhoneNumber(lastOrder.phone_number);
+          if (lastOrder.address) setAddress(lastOrder.address);
+        }
       }
     }
-    checkUser();
+    fetchUserData();
   }, []);
 
   const totalPrice = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -129,7 +151,10 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
             {/* Зүүн тал: Захиалагчийн мэдээлэл оруулах форм */}
             <form onSubmit={handleSubmitOrder} className="flex flex-col gap-6">
-              <h2 className="text-xs font-bold tracking-widest uppercase text-gray-400">Хүргэлтийн мэдээлэл</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold tracking-widest uppercase text-gray-400">Хүргэлтийн мэдээлэл</h2>
+                {userId && <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider">✓ Автоматаар бөглөгдсөн</span>}
+              </div>
               
               <div>
                 <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Нэр *</label>
@@ -182,10 +207,12 @@ export default function CheckoutPage() {
               
               <div className="flex flex-col gap-4 mb-6 max-h-72 overflow-y-auto">
                 {cart.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center border-b border-gray-100 pb-3">
+                  <div key={item.cartItemId} className="flex justify-between items-center border-b border-gray-100 pb-3">
                     <div>
                       <p className="text-sm font-medium">{item.title}</p>
-                      <p className="text-xs text-gray-500">Тоо ширхэг: {item.quantity}</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {Number(item.price).toLocaleString()} ₮ x {item.quantity}
+                      </p>
                     </div>
                     <p className="text-sm font-semibold">
                       {(item.price * item.quantity).toLocaleString()} ₮
@@ -203,5 +230,13 @@ export default function CheckoutPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-white text-xs tracking-widest uppercase text-gray-400">Ачаалж байна...</div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }
