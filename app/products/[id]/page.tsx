@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCartStore } from '../../store/useCartStore';
 import { supabase } from '../../lib/supabase';
 
-export default function ProductDetailPage() {
+function ProductDetailContent() {
   const params = useParams();
   const id = params?.id;
 
@@ -30,7 +30,6 @@ export default function ProductDetailPage() {
 
       if (!error && data) {
         setProduct(data);
-        // Хэрэв бараа размеруудтай бол эхнийхийг нь сонгох
         if (data.sizes) {
           const sizeList = data.sizes.split(',').map((s: string) => s.trim());
           if (sizeList.length > 0) setSelectedSize(sizeList[0]);
@@ -65,7 +64,6 @@ export default function ProductDetailPage() {
   const availableSizes = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()) : ['S', 'M', 'L', 'XL'];
 
   const handleAddToCart = () => {
-    // Размер болон тоо ширхэгтэй хамт сагслах
     for (let i = 0; i < quantity; i++) {
       addToCart({
         ...product,
@@ -244,5 +242,13 @@ export default function ProductDetailPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProductDetailPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-white text-xs tracking-widest uppercase text-gray-400">Ачаалж байна...</div>}>
+      <ProductDetailContent />
+    </Suspense>
   );
 }
