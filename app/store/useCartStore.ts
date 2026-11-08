@@ -1,64 +1,53 @@
 import { create } from 'zustand';
 
-export interface Product {
+interface CartItem {
   id: number;
   title: string;
   price: number;
-  isPreorder: boolean;
-  imageUrl: string;
-}
-
-export interface CartItem extends Product {
+  image_url?: string;
   quantity: number;
 }
 
-interface CartState {
+interface CartStore {
   cart: CartItem[];
-  addToCart: (product: Product) => void;
+  toastMessage: string | null;
+  addToCart: (product: any) => void;
   removeFromCart: (id: number) => void;
   clearCart: () => void;
-  getTotalPrice: () => number;
-  getTotalCount: () => number;
 }
 
-export const useCartStore = create<CartState>((set, get) => ({
+export const useCartStore = create<CartStore>((set) => ({
   cart: [],
-  
-  // Сагсанд нэмэх
-  addToCart: (product) => {
-    const currentCart = get().cart;
-    const existingItem = currentCart.find((item) => item.id === product.id);
+  toastMessage: null,
+  addToCart: (product) =>
+    set((state) => {
+      const existingIndex = state.cart.findIndex((item) => item.id === product.id);
+      let updatedCart;
 
-    if (existingItem) {
-      set({
-        cart: currentCart.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        ),
-      });
-    } else {
-      set({ cart: [...currentCart, { ...product, quantity: 1 }] });
-    }
-  },
+      if (existingIndex > -1) {
+        updatedCart = [...state.cart];
+        updatedCart[existingIndex].quantity += 1;
+      } else {
+        updatedCart = [
+          ...state.cart,
+          {
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            image_url: product.image_url || product.imageUrl,
+            quantity: 1,
+          },
+        ];
+      }
 
-  // Сагснаас хасах
-  removeFromCart: (id) => {
-    set({
-      cart: get().cart.filter((item) => item.id !== id),
-    });
-  },
-
-  // Сагс цэвэрлэх
+      return {
+        cart: updatedCart,
+        toastMessage: `"${product.title}" сагсанд нэмэгдлээ.`,
+      };
+    }),
+  removeFromCart: (id) =>
+    set((state) => ({
+      cart: state.cart.filter((item) => item.id !== id),
+    })),
   clearCart: () => set({ cart: [] }),
-
-  // Нийт үнэ бодох
-  getTotalPrice: () => {
-    return get().cart.reduce((total, item) => total + item.price * item.quantity, 0);
-  },
-
-  // Нийт барааны тоо
-  getTotalCount: () => {
-    return get().cart.reduce((total, item) => total + item.quantity, 0);
-  },
 }));

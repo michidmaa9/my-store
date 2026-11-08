@@ -275,6 +275,12 @@ export default function HomePage() {
           </div>
         </div>
       )}
+      {/* Toast Notification */}
+{cartStoreToast && (
+  <div className="fixed bottom-6 right-6 z-50 bg-black text-white px-6 py-3 text-xs font-bold tracking-widest uppercase shadow-2xl transition-all duration-300">
+    {cartStoreToast}
+  </div>
+)}
     </div>
   );
 }
