@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCartStore } from './store/useCartStore';
 import { supabase } from './lib/supabase';
 
 export default function HomePage() {
+  const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -52,6 +54,19 @@ export default function HomePage() {
     
     return matchesSearch;
   });
+
+  // Сагслах товч дарахад размертай эсэхийг шалгах логик
+  const handleAddToCartClick = (product: any) => {
+    const hasSizes = product.sizes && product.sizes.trim().length > 0;
+    
+    // Хэрэв размертай бараа (гутал, хувцас) бол шууд сагслахгүй, дэлгэрэнгүй хуудас руу үсрээд размер сонго게 хийнэ
+    if (hasSizes) {
+      router.push(`/products/${product.id}`);
+    } else {
+      // Размергүй энгийн бараа бол шууд сагсална
+      addToCart(product);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -150,6 +165,12 @@ export default function HomePage() {
               ГАДУУР ХУВЦАС
             </button>
             <button
+              onClick={() => setSelectedCategory('shoes')}
+              className={`pb-1 transition ${selectedCategory === 'shoes' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
+            >
+              ГУТАЛ
+            </button>
+            <button
               onClick={() => setSelectedCategory('accessories')}
               className={`pb-1 transition ${selectedCategory === 'accessories' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
             >
@@ -204,7 +225,7 @@ export default function HomePage() {
                         Үзэх
                       </Link>
                       <button
-                        onClick={() => addToCart(product)}
+                        onClick={() => handleAddToCartClick(product)}
                         className="flex-1 bg-black py-2.5 text-xs font-bold tracking-wider text-white uppercase hover:bg-gray-800 transition"
                       >
                         Сагслах

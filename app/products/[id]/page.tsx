@@ -12,7 +12,7 @@ function ProductDetailContent() {
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -32,7 +32,7 @@ function ProductDetailContent() {
         setProduct(data);
         if (data.sizes) {
           const sizeList = data.sizes.split(',').map((s: string) => s.trim());
-          if (sizeList.length > 0) setSelectedSize(sizeList[0]);
+          if (sizeList.length > 0) setSelectedSize(sizeList[0]); // Анхдагчаар эхнийхийг сонгоно
         }
       }
       setLoading(false);
@@ -61,13 +61,18 @@ function ProductDetailContent() {
   }
 
   const imgSrc = product.image_url || product.imageUrl;
-  const availableSizes = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()) : ['S', 'M', 'L', 'XL'];
+  const availableSizes = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()) : [];
 
   const handleAddToCart = () => {
+    if (availableSizes.length > 0 && !selectedSize) {
+      alert('Эхлээд размер сонгоно уу!');
+      return;
+    }
+
     for (let i = 0; i < quantity; i++) {
       addToCart({
         ...product,
-        title: `${product.title} (${selectedSize})`,
+        title: selectedSize ? `${product.title} (${selectedSize})` : product.title,
       });
     }
     setIsCartOpen(true);
@@ -126,28 +131,32 @@ function ProductDetailContent() {
                 {Number(product.price).toLocaleString()} ₮
               </p>
 
-              <div className="border-t border-gray-100 py-6">
-                <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-3">Размер сонгох:</p>
-                <div className="flex flex-wrap gap-3">
-                  {availableSizes.map((size: string) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`h-12 w-12 border text-xs font-bold tracking-widest uppercase transition ${
-                        selectedSize === size
-                          ? 'border-black bg-black text-white'
-                          : 'border-gray-200 bg-white text-gray-800 hover:border-black'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+              {/* Хэрэв размерууд байвал харуулах (Гутал, Хувцас) */}
+              {availableSizes.length > 0 && (
+                <div className="border-t border-gray-100 py-6">
+                  <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-3">Бүтээгдэхүүний төрлүүд / Размер:</p>
+                  <div className="grid grid-cols-4 gap-3">
+                    {availableSizes.map((size: string) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`py-3 border text-xs font-bold tracking-widest uppercase transition ${
+                          selectedSize === size
+                            ? 'border-black bg-blue-600 text-white' // Сонгогдсон үед тод өнгөтэй
+                            : 'border-gray-200 bg-gray-50 text-gray-800 hover:border-black'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
+              {/* Тоо хэмжээ */}
               <div className="border-t border-gray-100 py-6">
-                <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-3">Тоо ширхэг:</p>
-                <div className="flex items-center w-32 border border-gray-200">
+                <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-3">Тоо хэмжээ:</p>
+                <div className="flex items-center w-36 border border-gray-200">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     className="px-4 py-2.5 text-sm font-bold hover:bg-gray-100 transition"
@@ -162,19 +171,15 @@ function ProductDetailContent() {
                     +
                   </button>
                 </div>
-              </div>
-
-              <div className="border-t border-gray-100 py-6 text-xs text-gray-600 leading-relaxed">
-                <p>• Үлдэгдэл: <span className="font-semibold text-black">{product.stock ?? 10} ширхэг</span></p>
-                <p className="mt-1">• Хүргэлт: Улаанбаатар хотод 24-48 цагт хүргэгдэнэ.</p>
+                <p className="text-[11px] text-gray-400 mt-2">Үлдэгдэл: {product.stock ?? 999}</p>
               </div>
             </div>
 
             <button
               onClick={handleAddToCart}
-              className="w-full bg-black py-4 text-xs font-bold tracking-widest text-white uppercase hover:bg-gray-800 transition mt-6"
+              className="w-full bg-blue-600 py-4 text-xs font-bold tracking-widest text-white uppercase hover:bg-blue-700 transition mt-6 shadow-md"
             >
-              Сагсанд нэмэх
+              Сагсанд хийх · {(product.price * quantity).toLocaleString()} ₮
             </button>
           </div>
         </div>
