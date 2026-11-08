@@ -69,15 +69,10 @@ function ProductDetailContent() {
       return;
     }
 
-    for (let i = 0; i < quantity; i++) {
-      addToCart({
-        ...product,
-        title: selectedSize ? `${product.title} (${selectedSize})` : product.title,
-      });
-    }
+    // Сонгосон размер болон тоо хэмжээг store руу дамжуулах
+    addToCart(product, selectedSize || '', quantity);
     setIsCartOpen(true);
   };
-
   return (
     <div className="min-h-screen bg-white text-gray-900">
       {/* Header */}
