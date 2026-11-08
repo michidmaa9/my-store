@@ -84,6 +84,10 @@ export default function HomePage() {
             </button>
           </nav>
 
+          <Link href="/contact" className="text-gray-600 hover:text-black transition">
+            Холбоо барих
+          </Link>
+
           <Link href="/" className="text-xl font-black tracking-[0.25em]">
             MY BRAND
           </Link>
