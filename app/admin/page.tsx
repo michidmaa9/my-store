@@ -21,7 +21,7 @@ export default function AdminPage() {
   const [category, setCategory] = useState('hoodie');
   const [stock, setStock] = useState('10');
   const [sizes, setSizes] = useState('S, M, L, XL');
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]); // Олон зураг авахад зориулсан массив
   const [isPreorder, setIsPreorder] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,34 +53,37 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  // Бараа нэмэх (Файлын нэрийг цэвэрлэж алдаа гаргахгүй болгосон)
+  // Олон зураг хуулах болон бараа нэмэх логик
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !price) return alert('Барааны нэр болон үнийг оруулна уу!');
 
     setSubmitting(true);
-    let imageUrl = '';
+    let imageUrls: string[] = [];
 
-    if (imageFile) {
-      const fileExt = imageFile.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('products')
-        .upload(fileName, imageFile);
+    // Хэрэв олон зураг сонгосон бол бүгдийг нь Supabase storage рүү хуулна
+    if (imageFiles.length > 0) {
+      for (const file of imageFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(fileName, file);
 
-      if (uploadError) {
-        alert('Зураг хуулахад алдаа гарлаа: ' + uploadError.message);
-        setSubmitting(false);
-        return;
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage
+            .from('products')
+            .getPublicUrl(fileName);
+
+          if (publicUrlData?.publicUrl) {
+            imageUrls.push(publicUrlData.publicUrl);
+          }
+        }
       }
-
-      const { data: publicUrlData } = supabase.storage
-        .from('products')
-        .getPublicUrl(fileName);
-
-      imageUrl = publicUrlData.publicUrl;
     }
+
+    const combinedImageUrl = imageUrls.join(',');
 
     const { error } = await supabase.from('products').insert([
       {
@@ -89,7 +92,7 @@ export default function AdminPage() {
         category,
         stock: Number(stock) || 0,
         sizes,
-        image_url: imageUrl,
+        image_url: combinedImageUrl, // Олон зургийн линкийг таслалаар тусгаарлаж хадгална
         is_preorder: isPreorder,
       },
     ]);
@@ -103,7 +106,7 @@ export default function AdminPage() {
       setCategory('hoodie');
       setStock('10');
       setSizes('S, M, L, XL');
-      setImageFile(null);
+      setImageFiles([]);
       setIsPreorder(false);
       fetchAllData();
     }
@@ -205,7 +208,7 @@ export default function AdminPage() {
         {activeTab === 'products' && (
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
             <div className="border border-gray-200 p-6 h-fit">
-              <h2 className="mb-6 text-xs font-bold tracking-widest uppercase">Шинэ бараа нэмэх</h2>
+              <h2 className="mb-6 text-xs font-bold tracking-widest uppercase">Шинэ бараа нэмэх (Олон зурагтай)</h2>
               <form onSubmit={handleAddProduct} className="flex flex-col gap-4">
                 <div>
                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Барааны нэр *</label>
@@ -241,6 +244,7 @@ export default function AdminPage() {
                     <option value="hoodie">Хууди / Цамц</option>
                     <option value="pants">Өмд</option>
                     <option value="jacket">Гадуур хувцас</option>
+                    <option value="shoes">Гутал</option>
                     <option value="accessories">Бусад / Аксессуар</option>
                   </select>
                 </div>
@@ -269,13 +273,17 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Зураг сонгох (File)</label>
+                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Зургууд сонгох (Олон байж болно)</label>
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    multiple
+                    onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
                     className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-none file:border-0 file:text-xs file:font-bold file:bg-black file:text-white hover:file:bg-gray-800"
                   />
+                  {imageFiles.length > 0 && (
+                    <p className="text-[10px] text-green-600 mt-1 font-semibold">{imageFiles.length} зураг сонгогдлоо</p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 pt-2">
@@ -310,7 +318,7 @@ export default function AdminPage() {
               ) : (
                 <div className="flex flex-col gap-4">
                   {products.map((product) => {
-                    const imgSrc = product.image_url || product.imageUrl;
+                    const firstImg = product.image_url ? product.image_url.split(',')[0] : '';
                     return (
                       <div
                         key={product.id}
@@ -318,8 +326,8 @@ export default function AdminPage() {
                       >
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 flex-shrink-0 overflow-hidden bg-gray-100">
-                            {imgSrc ? (
-                              <img src={imgSrc} alt={product.title} className="h-full w-full object-cover" />
+                            {firstImg ? (
+                              <img src={firstImg} alt={product.title} className="h-full w-full object-cover" />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center text-[10px] text-gray-400">
                                 Зураггүй
