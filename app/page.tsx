@@ -93,6 +93,13 @@ export default function HomePage() {
               Админ
             </Link>
 
+            {/* Энд "Миний захиалгууд" линкийг нэмсэн байгаа */}
+            {user && (
+              <Link href="/orders" className="text-gray-500 hover:text-black transition">
+                Миний захиалгууд
+              </Link>
+            )}
+
             {user ? (
               <div className="flex items-center gap-3">
                 <span className="hidden lg:inline text-gray-500 text-[10px]">{user.email}</span>
