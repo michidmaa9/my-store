@@ -285,5 +285,46 @@ export default function AdminPage() {
             ) : (
               <div className="flex flex-col gap-4">
                 {orders.map((order) => (
-                  <div key={order.id} className="rounded-xl border p-4 bg-gray-50/50">
-                    <div className="
+                  <div key={order.id} className="rounded-xl border p-4 bg-gray-50">
+                    <div className="flex flex-col justify-between gap-2 border-b pb-3 sm:flex-row sm:items-center">
+                      <div>
+                        <p className="text-base font-bold text-gray-900">
+                          Үйлчлүүлэгч: <span className="text-black">{order.customer_name}</span>
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Утас: <a href={`tel:${order.phone_number}`} className="font-semibold text-blue-600 underline">{order.phone_number}</a>
+                        </p>
+                        <p className="text-sm text-gray-600">Хаяг: {order.address}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-extrabold text-amber-600">
+                          {Number(order.total_price).toLocaleString()} ₮
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(order.created_at).toLocaleString('mn-MN')}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Захиалсан бараанууд */}
+                    <div className="mt-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Захиалсан бараанууд:</p>
+                      <div className="flex flex-col gap-1.5">
+                        {order.items?.map((item: any, idx: number) => (
+                          <div key={idx} className="flex justify-between text-sm">
+                            <span>• {item.title} (x{item.quantity})</span>
+                            <span className="font-medium">{(Number(item.price) * item.quantity).toLocaleString()} ₮</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
