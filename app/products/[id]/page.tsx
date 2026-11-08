@@ -35,7 +35,6 @@ function ProductDetailContent() {
           const sizeList = data.sizes.split(',').map((s: string) => s.trim());
           if (sizeList.length > 0) setSelectedSize(sizeList[0]);
         }
-        // Зургуудыг салгаж авах (таслалаар тусгаарлагдсан линкүүд)
         if (data.image_url) {
           const imgs = data.image_url.split(',').map((s: string) => s.trim()).filter(Boolean);
           if (imgs.length > 0) setActiveImage(imgs[0]);
@@ -66,8 +65,8 @@ function ProductDetailContent() {
     );
   }
 
-  const images = product.image_url ? product.image_url.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
-  const availableSizes = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()) : [];
+  const images: string[] = product.image_url ? product.image_url.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+  const availableSizes: string[] = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()) : [];
 
   const handleAddToCart = () => {
     if (availableSizes.length > 0 && !selectedSize) {
@@ -123,10 +122,10 @@ function ProductDetailContent() {
               )}
             </div>
 
-            {/* Жижиг зургууд (Thumbnails) */}
+            {/* Жижиг зургууд (Thumbnails) - Explicitly typed parameters */}
             {images.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-2">
-                {images.map((imgUrl, index) => (
+                {images.map((imgUrl: string, index: number) => (
                   <button
                     key={index}
                     onClick={() => setActiveImage(imgUrl)}
