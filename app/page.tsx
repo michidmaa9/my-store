@@ -11,6 +11,10 @@ export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cart, addToCart, removeFromCart } = useCartStore();
 
+  // Хайлт болон шүүлтүүрийн state-үүд
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'ready' | 'preorder'>('all');
+
   useEffect(() => {
     async function fetchProducts() {
       const { data, error } = await supabase.from('products').select('*');
@@ -21,6 +25,19 @@ export default function HomePage() {
     }
     fetchProducts();
   }, []);
+
+  // Хайлт болон шүүлтүүрээр барааг шүүх логик
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (filterType === 'ready') {
+      return matchesSearch && !product.is_preorder;
+    }
+    if (filterType === 'preorder') {
+      return matchesSearch && product.is_preorder;
+    }
+    return matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -46,20 +63,69 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="mx-auto max-w-7xl px-6 py-10">
-        <h1 className="mb-8 text-3xl font-extrabold tracking-tight">Бараанууд</h1>
+        <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <h1 className="text-3xl font-extrabold tracking-tight">Бараанууд</h1>
+
+          {/* Хайлт болон Шүүлтүүрийн хэсэг */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            {/* Хайлтын талбар */}
+            <input
+              type="text"
+              placeholder="Барааны нэрээр хайх..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="rounded-xl border bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black sm:w-64"
+            />
+
+            {/* Шүүх товчлуурууд */}
+            <div className="flex gap-1.5 rounded-xl border bg-white p-1">
+              <button
+                onClick={() => setFilterType('all')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  filterType === 'all' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Бүгд
+              </button>
+              <button
+                onClick={() => setFilterType('ready')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  filterType === 'ready' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Бэлэн
+              </button>
+              <button
+                onClick={() => setFilterType('preorder')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  filterType === 'preorder' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Урьдчилсан
+              </button>
+            </div>
+          </div>
+        </div>
 
         {loading ? (
           <p className="text-gray-500">Ачаалж байна...</p>
+        ) : filteredProducts.length === 0 ? (
+          <p className="text-gray-500 py-12 text-center">Хайсан бараа олдсонгүй.</p>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => {
+            {filteredProducts.map((product) => {
               const imgSrc = product.image_url || product.imageUrl;
 
               return (
                 <div
                   key={product.id}
-                  className="flex flex-col justify-between rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md"
+                  className="flex flex-col justify-between rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md relative"
                 >
+                  {product.is_preorder && (
+                    <span className="absolute top-6 left-6 z-10 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">
+                      Pre-order
+                    </span>
+                  )}
                   <div>
                     <div className="mb-4 flex h-48 w-full items-center justify-center overflow-hidden rounded-lg bg-gray-100">
                       {imgSrc ? (
