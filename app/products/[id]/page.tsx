@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import { useCartStore } from '../../store/useCartStore';
 
-export default function ProductDetailPage() {
+function ProductDetailContent() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id;
@@ -57,7 +57,6 @@ export default function ProductDetailPage() {
   const imgSrc = product.image_url || product.imageUrl;
 
   const handleAddToCartWithSize = () => {
-    // Размерын мэдээллийг нэртэй нь хамт сагслах эсвэл тусдаа хадгалах боломжтой
     addToCart({ ...product, title: `${product.title} (Размер: ${selectedSize})` });
     setIsCartOpen(true);
   };
@@ -211,5 +210,13 @@ export default function ProductDetailPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProductDetailPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-white text-xs tracking-widest uppercase text-gray-400">Ачаалж байна...</div>}>
+      <ProductDetailContent />
+    </Suspense>
   );
 }
