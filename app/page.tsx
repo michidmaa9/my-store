@@ -55,15 +55,12 @@ export default function HomePage() {
     return matchesSearch;
   });
 
-  // Сагслах товч дарахад размертай эсэхийг шалгах логик
   const handleAddToCartClick = (product: any) => {
     const hasSizes = product.sizes && product.sizes.trim().length > 0;
     
-    // Хэрэв размертай бараа (гутал, хувцас) бол шууд сагслахгүй, дэлгэрэнгүй хуудас руу үсрээд размер сонго게 хийнэ
     if (hasSizes) {
       router.push(`/products/${product.id}`);
     } else {
-      // Размергүй энгийн бараа бол шууд сагсална
       addToCart(product);
     }
   };
@@ -259,7 +256,7 @@ export default function HomePage() {
               ) : (
                 cart.map((item) => (
                   <div
-                    key={item.id}
+                    key={item.cartItemId}
                     className="flex items-center justify-between border-b border-gray-100 py-4"
                   >
                     <div>
@@ -269,7 +266,7 @@ export default function HomePage() {
                       </p>
                     </div>
                     <button
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(item.cartItemId)}
                       className="text-xs text-red-500 hover:underline"
                     >
                       Устгах
