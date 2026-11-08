@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 interface CartItem {
-  cartItemId: string; // ID болон размерыг нийлүүлж ялгах уникал түлхүүр (Жишээ нь: 5-S)
+  cartItemId: string;
   id: number;
   title: string;
   price: number;
@@ -14,6 +14,7 @@ interface CartStore {
   cart: CartItem[];
   toastMessage: string | null;
   addToCart: (product: any, size?: string, quantity?: number) => void;
+  updateQuantity: (cartItemId: string, delta: number) => void;
   removeFromCart: (cartItemId: string) => void;
   clearCart: () => void;
 }
@@ -25,7 +26,6 @@ export const useCartStore = create<CartStore>((set) => ({
   toastMessage: null,
   addToCart: (product, size = '', quantity = 1) =>
     set((state) => {
-      // Тухайн бараа болон сонгосон размерыг нь хамтад нь уникал ID болгоно
       const cartItemId = `${product.id}-${size || 'nosize'}`;
       const existingIndex = state.cart.findIndex((item) => item.cartItemId === cartItemId);
       let updatedCart;
@@ -49,9 +49,7 @@ export const useCartStore = create<CartStore>((set) => ({
         ];
       }
 
-      // Өмнөх таймерыг цэвэрлэж байгаад шинээр 3 секунд тоолно
       if (toastTimeout) clearTimeout(toastTimeout);
-
       toastTimeout = setTimeout(() => {
         set({ toastMessage: null });
       }, 3000);
@@ -63,6 +61,21 @@ export const useCartStore = create<CartStore>((set) => ({
         toastMessage: toastText,
       };
     }),
+  
+  // Сагсан доторх барааны тоог + / - болгож өөрчлөх функц
+  updateQuantity: (cartItemId, delta) =>
+    set((state) => {
+      const updatedCart = state.cart.map((item) => {
+        if (item.cartItemId === cartItemId) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : null;
+        }
+        return item;
+      }).filter(Boolean) as CartItem[];
+
+      return { cart: updatedCart };
+    }),
+
   removeFromCart: (cartItemId) =>
     set((state) => ({
       cart: state.cart.filter((item) => item.cartItemId !== cartItemId),
