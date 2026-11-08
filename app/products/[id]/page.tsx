@@ -32,7 +32,7 @@ function ProductDetailContent() {
         setProduct(data);
         if (data.sizes) {
           const sizeList = data.sizes.split(',').map((s: string) => s.trim());
-          if (sizeList.length > 0) setSelectedSize(sizeList[0]); // Анхдагчаар эхнийхийг сонгоно
+          if (sizeList.length > 0) setSelectedSize(sizeList[0]);
         }
       }
       setLoading(false);
@@ -69,10 +69,10 @@ function ProductDetailContent() {
       return;
     }
 
-    // Сонгосон размер болон тоо хэмжээг store руу дамжуулах
     addToCart(product, selectedSize || '', quantity);
     setIsCartOpen(true);
   };
+
   return (
     <div className="min-h-screen bg-white text-gray-900">
       {/* Header */}
@@ -126,7 +126,6 @@ function ProductDetailContent() {
                 {Number(product.price).toLocaleString()} ₮
               </p>
 
-              {/* Хэрэв размерууд байвал харуулах (Гутал, Хувцас) */}
               {availableSizes.length > 0 && (
                 <div className="border-t border-gray-100 py-6">
                   <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-3">Бүтээгдэхүүний төрлүүд / Размер:</p>
@@ -137,7 +136,7 @@ function ProductDetailContent() {
                         onClick={() => setSelectedSize(size)}
                         className={`py-3 border text-xs font-bold tracking-widest uppercase transition ${
                           selectedSize === size
-                            ? 'border-black bg-blue-600 text-white' // Сонгогдсон үед тод өнгөтэй
+                            ? 'border-black bg-blue-600 text-white'
                             : 'border-gray-200 bg-gray-50 text-gray-800 hover:border-black'
                         }`}
                       >
@@ -148,7 +147,6 @@ function ProductDetailContent() {
                 </div>
               )}
 
-              {/* Тоо хэмжээ */}
               <div className="border-t border-gray-100 py-6">
                 <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-3">Тоо хэмжээ:</p>
                 <div className="flex items-center w-36 border border-gray-200">
@@ -200,7 +198,7 @@ function ProductDetailContent() {
               ) : (
                 cart.map((item) => (
                   <div
-                    key={item.id}
+                    key={item.cartItemId}
                     className="flex items-center justify-between border-b border-gray-100 py-4"
                   >
                     <div>
@@ -209,8 +207,9 @@ function ProductDetailContent() {
                         {Number(item.price).toLocaleString()} ₮ x {item.quantity}
                       </p>
                     </div>
+                    {/* Энд item.id биш item.cartItemId ашиглаж байгааг анхаарна уу */}
                     <button
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(item.cartItemId)}
                       className="text-xs text-red-500 hover:underline"
                     >
                       Устгах
