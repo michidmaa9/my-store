@@ -18,6 +18,7 @@ export default function AdminPage() {
   // Бараа нэмэх state-үүд
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
+  const [category, setCategory] = useState('hoodie');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isPreorder, setIsPreorder] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -50,7 +51,7 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  // Бараа нэмэх (Зураг upload хийх логиктой)
+  // Бараа нэмэх (Зураг болон ангилал хамт хадгалах)
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !price) return alert('Барааны нэр болон үнийг оруулна уу!');
@@ -61,7 +62,7 @@ export default function AdminPage() {
     // Хэрэв зураг сонгосон бол Supabase Storage рүү upload хийх
     if (imageFile) {
       const fileName = `${Date.now()}-${imageFile.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('products')
         .upload(fileName, imageFile);
 
@@ -83,6 +84,7 @@ export default function AdminPage() {
       {
         title,
         price: Number(price),
+        category,
         image_url: imageUrl,
         is_preorder: isPreorder,
       },
@@ -94,6 +96,7 @@ export default function AdminPage() {
       alert('Бараа амжилттай нэмэгдлээ!');
       setTitle('');
       setPrice('');
+      setCategory('hoodie');
       setImageFile(null);
       setIsPreorder(false);
       fetchAllData();
@@ -223,6 +226,20 @@ export default function AdminPage() {
                 </div>
 
                 <div>
+                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Ангилал (Category) *</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full rounded-none border-b border-gray-300 bg-transparent px-2 py-2 text-sm focus:border-black focus:outline-none"
+                  >
+                    <option value="hoodie">Хууди / Цамц</option>
+                    <option value="pants">Өмд</option>
+                    <option value="jacket">Гадуур хувцас</option>
+                    <option value="accessories">Бусад / Аксессуар</option>
+                  </select>
+                </div>
+
+                <div>
                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-gray-500">Зураг сонгох (File)</label>
                   <input
                     type="file"
@@ -282,7 +299,8 @@ export default function AdminPage() {
                           </div>
                           <div>
                             <p className="text-sm font-medium">{product.title}</p>
-                            <p className="text-xs font-semibold text-gray-500 mt-0.5">
+                            <p className="text-xs text-gray-400 mt-0.5 uppercase tracking-wider">Ангилал: {product.category || 'all'}</p>
+                            <p className="text-xs font-semibold text-gray-700 mt-0.5">
                               {Number(product.price).toLocaleString()} ₮
                             </p>
                           </div>
